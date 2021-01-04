@@ -1,0 +1,92 @@
+---
+title: "trabajo_final"
+author: "Sergio Redondo y Carlos Rodríguez"
+date: "03/12/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Índice
+1. [Componentes del grupo](#names)
+2. [Introducción](#introduction)
+3. [Datos](#data)
+4. [Exploración y preparación de los datos](#first-show)
+5. [Segunda exploración](#second-show)
+6. [SNA](#sna-show)
+6.1 [igraph y gephi](#ig-show)
+6.2 [clustering coefficient and transitivity ](#cct-show)
+6.3 [neighborhood size ](#ns-show)
+6.4 [Extracting subgraphs ](#subgraph-show)
+8. [Plan de trabajo](#workplan)
+9. [Dificultades](#difficulties)
+
+
+# Componentes del grupo <a name="names"></a>
+- Sergio Redondo Montes
+- Carlos Rodríguez González
+
+
+# Alcance / resumen del trabajo <a name="introduction"></a>
+Objetivo:
+Con el objetivo de indagar en la interpretación del lenguaje natural, se analizarán diferentes twits, con la finalidad de analizar el complejo idioma español para clasificar el odio.
+
+
+# Datos <a name="data"></a>
+
+En el siguiente enlace podéis encontrar diferentes datasets a traves del buscador de para datasets de google
+https://datasetsearch.research.google.com/search?query=twitter%20spanish&docid=lMO2p37witpZBzb2AAAAAA%3D%3D
+
+Los siguientes enlaces son páginas donde encontrar más datasets, algunos son gratuitos y otros de pago
+https://zenodo.org/record/3520150#.X_MH1On0nOQ
+http://tass.sepln.org/tass_data/download.php
+http://www.sepln.org/
+
+
+Los datos que vamos a usar despues de mucho buscar para este trabajo van a ser los siguientes:
+https://zenodo.org/record/2592149#.X_MHjOn0lQJ
+
+Cómo no hemos conseguido encontrar un buen dataset en español que nos diera twits con mensajes de odio de diferentes tipos y mensajes sin odio, decidimos usar el dataset anterior.
+En este dataset podemos encontrar 6.000 twits de derechas e izquierdas en español clasificados por 0 y 1.
+Tambien aporta 2 millnes de twits sin clasificar.
+....
+
+
+## Exploración y preparación de los datos <a name="first-show"></a>
+
+```{r}
+
+library(C50)
+library(caret)
+
+```
+
+```{r}
+datos <- read.csv("./dataset/HateSpeechData.csv")
+
+head(datos)
+```
+
+```{r}
+datos$V2[1]
+```
+
+```{r}
+datos$V2 <- sapply(datos$V2,function(row) iconv(row, "latin1", "ASCII", sub=""))
+
+datos$V2[1]
+```
+
+
+
+
+
+
+
+
+
+
+
+
