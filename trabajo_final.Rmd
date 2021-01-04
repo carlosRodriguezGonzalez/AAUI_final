@@ -1,8 +1,14 @@
 ---
 title: "trabajo_final"
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+
 author: "Sergio Redondo y Carlos Rodríguez"
 date: "03/12/2020"
-output: word_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
