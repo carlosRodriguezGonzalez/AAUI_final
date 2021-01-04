@@ -11,7 +11,7 @@
 
 
 
-<title>index</title>
+<title>trabajo_final</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -299,29 +299,78 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">index</h1>
+<h1 class="title toc-ignore">trabajo_final</h1>
 
 </div>
 
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
-<pre class="r"><code>summary(cars)</code></pre>
-<pre><code>##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00</code></pre>
+<div id="índice" class="section level1">
+<h1>Índice</h1>
+<ol style="list-style-type: decimal">
+<li><a href="#names">Componentes del grupo</a></li>
+<li><a href="#introduction">Introducción</a></li>
+<li><a href="#data">Datos</a></li>
+<li><a href="#first-show">Exploración y preparación de los datos</a></li>
+<li><a href="#second-show">Segunda exploración</a></li>
+<li><a href="#sna-show">SNA</a> 6.1 <a href="#ig-show">igraph y gephi</a> 6.2 <a href="#cct-show">clustering coefficient and transitivity</a> 6.3 <a href="#ns-show">neighborhood size</a> 6.4 <a href="#subgraph-show">Extracting subgraphs</a></li>
+<li><a href="#workplan">Plan de trabajo</a></li>
+<li><a href="#difficulties">Dificultades</a></li>
+</ol>
 </div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
-<p><img src="index_files/figure-html/pressure-1.png" width="672" /></p>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
+<div id="componentes-del-grupo" class="section level1">
+<h1>Componentes del grupo <a name="names"></a></h1>
+<ul>
+<li>Sergio Redondo Montes</li>
+<li>Carlos Rodríguez González</li>
+</ul>
+</div>
+<div id="alcance-resumen-del-trabajo" class="section level1">
+<h1>Alcance / resumen del trabajo <a name="introduction"></a></h1>
+<p>Objetivo: Con el objetivo de indagar en la interpretación del lenguaje natural, se analizarán diferentes twits, con la finalidad de analizar el complejo idioma español para clasificar el odio.</p>
+</div>
+<div id="datos" class="section level1">
+<h1>Datos <a name="data"></a></h1>
+<p>En el siguiente enlace podéis encontrar diferentes datasets a traves del buscador de para datasets de google <a href="https://datasetsearch.research.google.com/search?query=twitter%20spanish&amp;docid=lMO2p37witpZBzb2AAAAAA%3D%3D" class="uri">https://datasetsearch.research.google.com/search?query=twitter%20spanish&amp;docid=lMO2p37witpZBzb2AAAAAA%3D%3D</a></p>
+<p>Los siguientes enlaces son páginas donde encontrar más datasets, algunos son gratuitos y otros de pago <a href="https://zenodo.org/record/3520150#.X_MH1On0nOQ" class="uri">https://zenodo.org/record/3520150#.X_MH1On0nOQ</a> <a href="http://tass.sepln.org/tass_data/download.php" class="uri">http://tass.sepln.org/tass_data/download.php</a> <a href="http://www.sepln.org/" class="uri">http://www.sepln.org/</a></p>
+<p>Los datos que vamos a usar despues de mucho buscar para este trabajo van a ser los siguientes: <a href="https://zenodo.org/record/2592149#.X_MHjOn0lQJ" class="uri">https://zenodo.org/record/2592149#.X_MHjOn0lQJ</a></p>
+<p>Cómo no hemos conseguido encontrar un buen dataset en español que nos diera twits con mensajes de odio de diferentes tipos y mensajes sin odio, decidimos usar el dataset anterior. En este dataset podemos encontrar 6.000 twits de derechas e izquierdas en español clasificados por 0 y 1. Tambien aporta 2 millnes de twits sin clasificar. ….</p>
+<div id="exploración-y-preparación-de-los-datos" class="section level2">
+<h2>Exploración y preparación de los datos <a name="first-show"></a></h2>
+<pre class="r"><code>library(C50)
+library(caret)</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>datos &lt;- read.csv(&quot;./dataset/HateSpeechData.csv&quot;)
+
+head(datos)</code></pre>
+<pre><code>##                      V1
+## 1 id=828025263321657348
+## 2 id=828025128797741057
+## 3 id=828025087815274496
+## 4 id=828025006626058241
+## 5 id=828024709761658880
+## 6 id=828024543847600128
+##                                                                                                                                                       V2
+## 1        Ismael es egocentrico porque se vuelve loca si le dicen que tiene el pelo bonitoðŸ\230‚ðŸ\230‚ðŸ\230‚ðŸ\230‚ eso se define con otro objetivo #FirstDates251
+## 2 ..ya tardaba en salir quien pronunciase nombre catalÃ¡n sÃ­laba aguda como si fuese plana [es EduÃ¡Ã¡Ã¡rd],[ErnÃ©Ã©Ã©st],[AlbÃ©Ã©Ã©rt] no son ingleses
+## 3                    (Esto no es un discurso polÃ­tico y razonado, obviamente, solo una llamada de atenciÃ³n en plan JODER, NO CUESTA TANTO SABER COSAS)
+## 4        Muy despreciados,siiii,pero todos vestidos de alta costura espaÃ±ola o extranjera como la derechona burguesa verdad,â\200¦ https://t.co/5UnIo6C3YF
+## 5                     marica explicame porque a veces no te entiendo. â\200” En vez de venir a ensuciar mi cc con insultos homof... https://t.co/hSGMfcEtos
+## 6     Abusan de 1400 niÃ±as durante 16 aÃ±os porque la policÃ­a tenÃ­a miedo de que les llamasen racistas, eran moros #MuslimBan https://t.co/2LItT1ZqFN
+##   V3
+## 1  0
+## 2  0
+## 3  0
+## 4  1
+## 5  1
+## 6  0</code></pre>
+<pre class="r"><code>datos$V2[1]</code></pre>
+<pre><code>## [1] &quot;Ismael es egocentrico porque se vuelve loca si le dicen que tiene el pelo bonitoðŸ\230‚ðŸ\230‚ðŸ\230‚ðŸ\230‚ eso se define con otro objetivo #FirstDates251&quot;</code></pre>
+<pre class="r"><code>datos$V2 &lt;- sapply(datos$V2,function(row) iconv(row, &quot;latin1&quot;, &quot;ASCII&quot;, sub=&quot;&quot;))
+
+datos$V2[1]</code></pre>
+<pre><code>## [1] &quot;Ismael es egocentrico porque se vuelve loca si le dicen que tiene el pelo bonito eso se define con otro objetivo #FirstDates251&quot;</code></pre>
+</div>
 </div>
 
 
