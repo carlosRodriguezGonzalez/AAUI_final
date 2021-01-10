@@ -1,5 +1,7 @@
 ---
 title: "trabajo_final"
+author: "Sergio Redondo y Carlos Rodríguez"
+date: "03/12/2020"
 ---
 
 ```{r setup, include=FALSE}
@@ -11,14 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 2. [Introducción](#introduction)
 3. [Datos](#data)
 4. [Exploración y preparación de los datos](#first-show)
-5. [Segunda exploración](#second-show)
-6. [SNA](#sna-show)
-6.1 [igraph y gephi](#ig-show)
-6.2 [clustering coefficient and transitivity ](#cct-show)
-6.3 [neighborhood size ](#ns-show)
-6.4 [Extracting subgraphs ](#subgraph-show)
-8. [Plan de trabajo](#workplan)
-9. [Dificultades](#difficulties)
+5. [SNA](#sna-show)
+6. [Entrenar el modelo con los datos](#training-model)
+7. [Evaluar el rendimiento del modelo](#evaluate-model)
+8. [Mejora del rendimiento del modeloo](#improve-model)
 
 
 # Componentes del grupo <a name="names"></a>
@@ -46,38 +44,441 @@ Los datos que vamos a usar despues de mucho buscar para este trabajo van a ser l
 https://zenodo.org/record/2592149#.X_MHjOn0lQJ
 
 Cómo no hemos conseguido encontrar un buen dataset en español que nos diera twits con mensajes de odio de diferentes tipos y mensajes sin odio, decidimos usar el dataset anterior.
-En este dataset podemos encontrar 6.000 twits de derechas e izquierdas en español clasificados por 0 y 1.
+En este dataset podemos encontrar 6.000 twits de odio y no odio relacionados con haternet (Delitos de odio) clasificados por 0 y 1.
 Tambien aporta 2 millnes de twits sin clasificar.
 ....
 
 
 ## Exploración y preparación de los datos <a name="first-show"></a>
 
+
 ```{r}
 
 library(C50)
 library(caret)
+library(quanteda)
+library(tidyverse)
+library(tidytext)
+
+library(e1071)
+
+library(tm)
 
 ```
+
+```{r}
+system("sed 's/;||;/\t/g' ./dataset/labeled_corpus_6K.txt > HateSpeechData.txt")
+```
+
 
 ```{r}
 datos <- read.csv("./dataset/HateSpeechData.csv")
 
+summary(datos)
+apply(is.na(datos),2,sum)
+which(is.na(datos$V3))
+
 head(datos)
+
+```
+
+
+```{r}
+df <- setNames(datos,   c("id", "text", "class"))
+df$class <- as.factor(df$class)
+
+summary(df)
+str(df)
+head(df)
+
+```
+
+
+
+```{r}
+df$text[1]
+
+#df$text <- gsub("[\U0001F600-\U0001F64F]+", "", df$text)
+
+df$text[1]
+
 ```
 
 ```{r}
-datos$V2[1]
+df$text[1]
+
+df$text <- tolower(df$text)
+
+df$text[1]
 ```
 
 ```{r}
-datos$V2 <- sapply(datos$V2,function(row) iconv(row, "latin1", "ASCII", sub=""))
+df$text[1858]
+df$text <- gsub("[!^á]", "a", df$text)
+df$text[1858]
 
-datos$V2[1]
+df$text[1874]
+df$text <- gsub("[!^é]", "e", df$text)
+df$text[1874]
+
+df$text[1874]
+df$text <- gsub("[!^í]", "i", df$text)
+df$text[1874]
+
+df$text[1874]
+df$text <- gsub("[!^ó]", "o", df$text)
+df$text[1874]
+
+df$text[1868]
+df$text <- gsub("[!^ú]", "u", df$text)
+df$text[1868]
+```
+
+```{r}
+df$text[17]
+
+df$text <- gsub('(f|ht)tp\\S+\\s*',"", df$text)
+
+df$text[17]
+
+```
+
+```{r}
+df$text[9]
+# removal of @name[mention]
+df$text <- gsub('@[a-zA-Z0-9]{1,15}',"", df$text)
+
+df$text[9]
+```
+
+```{r}
+df$text[39]
+
+df$text <- gsub('#',"", df$text)
+
+df$text[39]
+```
+
+```{r}
+df$text[48]
+# replace normal numbers with numbr
+df$text <- gsub('\\d+(\\.\\d+)?',"numbr", df$text)
+
+df$text[48]
+```
+
+```{r}
+df$text[9]
+# remove leading and trailing whitespace
+df$text <- gsub('^\\s+|\\s+?$',"", df$text)
+
+df$text[9]
+```
+
+```{r}
+df$text[39]
+# remove whitespace with a single space
+df$text <- gsub('\\s+'," ", df$text)
+
+df$text[39]
 ```
 
 
+# Analisis de sentimientos <a name="sna-show"></a>
 
+```{r}
+hate <- corpus(df$text[df$class==1])
+not_hate <- corpus(df$text[df$class==0])
+
+length(hate)
+summary(hate)
+class(hate)
+
+length(not_hate)
+summary(not_hate)
+class(not_hate)
+
+
+sparse_hate <- dfm(hate, 
+                 remove = stopwords("spanish"), 
+                 stem = FALSE, 
+                 remove_punct = TRUE)
+
+topfeatures(sparse_hate, 100)  # 20 top words
+
+
+sparse_not_hate <- dfm(not_hate, 
+                   remove = stopwords("spanish"), 
+                   stem = FALSE, 
+                   remove_punct = TRUE)
+
+topfeatures(sparse_not_hate, 100)  # 20 top words
+```
+
+```{r}
+additional_stopwords <- c("rt",
+                          "lol",
+                          "q",
+                          "d"
+)
+#, stopwords(source = "smart")
+mystopwords <- c(stopwords("spanish"), additional_stopwords)
+
+sparse_hate <- dfm(hate, 
+                   remove = mystopwords, 
+                   stem = FALSE, 
+                   remove_punct = TRUE)
+
+topfeatures(sparse_hate, 100)  # 20 top words
+
+
+sparse_not_hate <- dfm(not_hate, 
+                       remove = mystopwords, 
+                       stem = FALSE, 
+                       remove_punct = TRUE)
+
+topfeatures(sparse_not_hate, 100)  # 20 top words
+```
+
+```{r}
+set.seed(100)
+textplot_wordcloud(sparse_hate, 
+                   min_count = 25, 
+                   random_order = FALSE,
+                   rotation = .25, 
+                   color = RColorBrewer::brewer.pal(8,"Dark2"))
+
+
+
+textplot_wordcloud(sparse_not_hate, 
+                   min_count = 80, 
+                   random_order = FALSE,
+                   rotation = .25, 
+                   color = RColorBrewer::brewer.pal(8,"Dark2"))
+```
+
+```{r}
+mytoks <- 
+  tokens(hate, 
+         remove_punct = TRUE,
+         remove_numbers = TRUE) %>%
+  tokens_remove(mystopwords, padding = TRUE)
+
+mytoks
+
+mytoks_2 <- tokens_ngrams(mytoks, n = 2, 
+                          concatenator = "-")
+print(mytoks_2)
+
+quant_dfm <- dfm(mytoks_2)
+
+quant_dfm <- dfm_trim(quant_dfm, min_termfreq = 2)
+quant_dfm
+
+topfeatures(quant_dfm, 100)  # 100 top bigrams
+
+textplot_wordcloud(quant_dfm, 
+                   min_count = 2, 
+                   random_order = FALSE,
+                   rotation = 0, 
+                   color = RColorBrewer::brewer.pal(8,"Dark2"))
+```
+
+```{r}
+mytoks <- 
+  tokens(not_hate, 
+         remove_punct = TRUE,
+         remove_numbers = TRUE) %>%
+  tokens_remove(mystopwords, padding = TRUE)
+
+mytoks
+
+mytoks_2 <- tokens_ngrams(mytoks, n = 2, 
+                          concatenator = "-")
+print(mytoks_2)
+
+quant_dfm <- dfm(mytoks_2)
+
+quant_dfm <- dfm_trim(quant_dfm, min_termfreq = 2)
+quant_dfm
+
+topfeatures(quant_dfm, 100)  # 100 top bigrams
+
+textplot_wordcloud(quant_dfm, 
+                   min_count = 2, 
+                   random_order = FALSE,
+                   rotation = 0, 
+                   color = RColorBrewer::brewer.pal(8,"Dark2"))
+```
+
+# Entrenar el modelo con los datos <a name="training-model"></a>
+```{r}
+data_counts <- map_df(1:2,
+                      ~ unnest_tokens(df, word, text, 
+                                      token = "ngrams", n = .x)) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(id, word, sort = TRUE)
+
+words_10 <- data_counts %>%
+  group_by(word) %>%
+  summarise(n = n()) %>% 
+  filter(n >= 10) %>%
+  select(word)
+
+data_dtm <- data_counts %>%
+  right_join(words_10, by = "word") %>%
+  bind_tf_idf(word, id, n) %>%
+  cast_dtm(id, word, tf_idf)
+
+meta <- tibble(id = dimnames(data_dtm)[[1]]) %>%
+  left_join(df[!duplicated(df$id), ], by = "id")
+
+
+set.seed(1234)
+trainIndex <- createDataPartition(meta$class, p = 0.8, list = FALSE, times = 1)
+
+data_df_train <- data_dtm[trainIndex, ] %>% as.matrix() %>% as.data.frame()
+data_df_test <- data_dtm[-trainIndex, ] %>% as.matrix() %>% as.data.frame()
+
+response_train <- meta$class[trainIndex]
+response_test <- meta$class[-trainIndex]
+
+summary(data_df_train)
+
+
+trctrl <- trainControl(method = "none")
+```
+
+```{r}
+# SVM
+svm_mod <- train(x = data_df_train,
+                 y = as.factor(response_train),
+                 method = "svmLinearWeights2",
+                 trControl = trctrl,
+                 tuneGrid = data.frame(cost = 1, 
+                                       Loss = 0, 
+                                       weight = 1))
+
+svm_pred <- predict(svm_mod,
+                    newdata = data_df_test)
+
+svm_cm <- confusionMatrix(svm_pred, response_test)
+svm_cm
+```
+
+```{r}
+# Naive bayes
+nb_mod <- train(x = data_df_train,
+                y = as.factor(response_train),
+                method = "naive_bayes",
+                trControl = trctrl,
+                tuneGrid = data.frame(laplace = 0,
+                                      usekernel = FALSE,
+                                      adjust = FALSE))
+
+nb_pred <- predict(nb_mod,
+                   newdata = data_df_test)
+
+nb_cm <- confusionMatrix(nb_pred, response_test)
+nb_cm
+```
+
+```{r}
+# LOGIT
+logitboost_mod <- train(x = data_df_train,
+                        y = as.factor(response_train),
+                        method = "LogitBoost",
+                        trControl = trctrl)
+
+logitboost_pred <- predict(logitboost_mod,
+                           newdata = data_df_test)
+logitboost_cm <- confusionMatrix(logitboost_pred, response_test)
+logitboost_cm
+```
+
+```{r}
+# Random forest
+
+rf_mod <- train(x = data_df_train, 
+                y = as.factor(response_train), 
+                method = "ranger",
+                trControl = trctrl,
+                tuneGrid = data.frame(mtry = floor(sqrt(dim(data_df_train)[2])),
+                                      splitrule = "gini",
+                                      min.node.size = 1))
+rf_pred <- predict(rf_mod,
+                   newdata = data_df_test)
+rf_cm <- confusionMatrix(rf_pred, response_test)
+rf_cm
+```
+
+```{r}
+# NNet
+
+nnet_mod <- train(x = data_df_train,
+                  y = as.factor(response_train),
+                  method = "nnet",
+                  trControl = trctrl,
+                  tuneGrid = data.frame(size = 1,
+                                        decay = 5e-4),
+                  MaxNWts = 5000)
+nnet_pred <- predict(nnet_mod,
+                     newdata = data_df_test)
+nnet_cm <- confusionMatrix(nnet_pred, response_test)
+nnet_cm
+```
+
+
+# Evaluar el rendimiento del modelo <a name="evaluate-model"></a>
+```{r}
+mod_results <- rbind(
+  svm_cm$overall, 
+  nb_cm$overall,
+  logitboost_cm$overall,
+  rf_cm$overall,
+  nnet_cm$overall
+) %>%
+  as.data.frame() %>%
+  mutate(model = c("SVM", "Naive-Bayes", "LogitBoost", "Random forest", "Neural network"))
+
+mod_results %>%
+  ggplot(aes(model, Accuracy)) +
+  geom_point() +
+  ylim(0, 1) +
+  geom_hline(yintercept = mod_results$AccuracyNull[1],
+             color = "red")
+```
+
+
+# Mejora del rendimiento del modelo <a name="improve-model"></a>
+
+```{r}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 3,
+                           repeats = 3,
+                           search = "grid")
+svm_mod <- train(x = data_df_train,
+                 y = as.factor(response_train),
+                 method = "svmLinearWeights2",
+                 trControl = fitControl,
+                 tuneGrid = data.frame(cost = 0.01, 
+                                       Loss = 0, 
+                                       weight = seq(0.5, 1.5, 0.1)))
+plot(svm_mod)
+svm_pred <- predict(svm_mod,
+                    newdata = data_df_test)
+
+svm_cm <- confusionMatrix(svm_pred, response_test)
+svm_cm
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
 
 
 
