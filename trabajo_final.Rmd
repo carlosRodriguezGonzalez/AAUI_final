@@ -67,12 +67,12 @@ library(tm)
 ```
 
 ```{r}
-system("sed 's/;||;/\t/g' ./dataset/labeled_corpus_6K.txt > HateSpeechData.txt")
+#system("sed 's/;||;/\t/g' ./dataset/labeled_corpus_6K.txt > HateSpeechData.txt")
 ```
 
 
 ```{r}
-datos <- read.csv("./dataset/HateSpeechData.csv")
+datos <- read.csv("./dataset/HateSpeechData.csv", encoding="UTF-8", header = FALSE, sep = "\t")
 
 summary(datos)
 apply(is.na(datos),2,sum)
@@ -98,7 +98,7 @@ head(df)
 ```{r}
 df$text[1]
 
-#df$text <- gsub("[\U0001F600-\U0001F64F]+", "", df$text)
+df$text <- gsub("[\U0001F600-\U0001F64F]+", "", df$text)
 
 df$text[1]
 
